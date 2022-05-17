@@ -13,7 +13,7 @@ import cn.edu.scut.qinglew.rpc.client.RpcClientProxy;
 public class TestClient {
     public static void main(String[] args) {
         HelloService helloService = new RpcClientProxy("127.0.0.1", 9000).getProxy(HelloService.class);
-        String res = helloService.hello(new HelloObject(1, "hahaha"));
+        String res = helloService.hello(new HelloObject(2, "biubiubiu"));
         System.out.println(res);
     }
 }

@@ -1,6 +1,8 @@
 package cn.edu.scut.qinglew.test;
 
 import cn.edu.scut.qinglew.rpc.api.HelloService;
+import cn.edu.scut.qinglew.rpc.registry.DefaultServiceRegistry;
+import cn.edu.scut.qinglew.rpc.registry.ServiceRegistry;
 import cn.edu.scut.qinglew.rpc.server.RpcServer;
 
 /**
@@ -10,8 +12,15 @@ import cn.edu.scut.qinglew.rpc.server.RpcServer;
  */
 public class TestServer {
     public static void main(String[] args) {
+        /* 服务 */
         HelloService helloService = new HelloServiceImpl();
-        RpcServer rpcServer = new RpcServer();
-        rpcServer.register(helloService, 9000);
+
+        /* 创建注册表并注册服务 */
+        ServiceRegistry serviceRegistry = new DefaultServiceRegistry();
+        serviceRegistry.registry(helloService);
+
+        /* 创建并启动服务器 */
+        RpcServer rpcServer = new RpcServer(serviceRegistry);
+        rpcServer.start(9000);
     }
 }
