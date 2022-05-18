@@ -19,12 +19,12 @@ public class DefaultServiceRegistry implements ServiceRegistry{
     /**
      * 存储接口名-服务映射
      */
-    private final Map<String, Object> serviceMap = new ConcurrentHashMap<>();
+    private static final Map<String, Object> serviceMap = new ConcurrentHashMap<>();
 
     /**
      * 存储服务名
      */
-    private final Set<String> registeredService = ConcurrentHashMap.newKeySet();
+    private static final Set<String> registeredService = ConcurrentHashMap.newKeySet();
 
     @Override
     public synchronized <T> void registry(T service) {

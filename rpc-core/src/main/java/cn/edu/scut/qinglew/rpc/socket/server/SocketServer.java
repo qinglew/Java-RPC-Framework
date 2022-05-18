@@ -1,5 +1,7 @@
-package cn.edu.scut.qinglew.rpc.server;
+package cn.edu.scut.qinglew.rpc.socket.server;
 
+import cn.edu.scut.qinglew.rpc.RequestHandler;
+import cn.edu.scut.qinglew.rpc.RpcServer;
 import cn.edu.scut.qinglew.rpc.registry.ServiceRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,10 +12,10 @@ import java.net.Socket;
 import java.util.concurrent.*;
 
 /**
- * RPC服务提供者（服务端）
+ * Socket方式远程方法调用的提供者（服务端）
  */
-public class RpcServer {
-    private static final Logger logger = LoggerFactory.getLogger(RpcServer.class);
+public class SocketServer implements RpcServer {
+    private static final Logger logger = LoggerFactory.getLogger(SocketServer.class);
 
     private static final int CORE_POOL_SIZE = 5;
     private static final int MAXIMUM_POOL_SIZE = 50;
@@ -25,7 +27,7 @@ public class RpcServer {
 
     private final RequestHandler requestHandler = new RequestHandler();
 
-    public RpcServer(ServiceRegistry serviceRegistry) {
+    public SocketServer(ServiceRegistry serviceRegistry) {
         this.serviceRegistry = serviceRegistry;
 
         BlockingQueue<Runnable> workingQueue = new ArrayBlockingQueue<>(BLOCKING_QUEUE_CAPACITY);
@@ -34,6 +36,7 @@ public class RpcServer {
                 TimeUnit.SECONDS, workingQueue, threadFactory);
     }
 
+    @Override
     public void start(int port) {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
             logger.info("服务器启动...");

@@ -1,5 +1,6 @@
 package cn.edu.scut.qinglew.rpc.entity;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
@@ -15,8 +16,12 @@ import java.io.Serializable;
  * @author Qing Lew
  */
 @Data
-@Builder
+@AllArgsConstructor
 public class RpcRequest implements Serializable {
+    public RpcRequest() {
+
+    }
+
     /**
      * 接口名
      */

@@ -1,9 +1,11 @@
 package cn.edu.scut.qinglew.test;
 
+import cn.edu.scut.qinglew.rpc.RpcServer;
 import cn.edu.scut.qinglew.rpc.api.HelloService;
+import cn.edu.scut.qinglew.rpc.netty.server.NettyServer;
 import cn.edu.scut.qinglew.rpc.registry.DefaultServiceRegistry;
 import cn.edu.scut.qinglew.rpc.registry.ServiceRegistry;
-import cn.edu.scut.qinglew.rpc.server.RpcServer;
+import cn.edu.scut.qinglew.rpc.socket.server.SocketServer;
 
 /**
  * 测试：服务器/服务提供者
@@ -20,7 +22,8 @@ public class TestServer {
         serviceRegistry.registry(helloService);
 
         /* 创建并启动服务器 */
-        RpcServer rpcServer = new RpcServer(serviceRegistry);
-        rpcServer.start(9000);
+//        SocketServer rpcServer = new SocketServer(serviceRegistry);
+        RpcServer server = new NettyServer();
+        server.start(9000);
     }
 }
