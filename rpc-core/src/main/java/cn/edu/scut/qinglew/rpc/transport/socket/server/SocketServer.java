@@ -4,6 +4,7 @@ import cn.edu.scut.qinglew.rpc.enumeration.RpcError;
 import cn.edu.scut.qinglew.rpc.exception.RpcException;
 import cn.edu.scut.qinglew.rpc.factory.ThreadPoolFactory;
 import cn.edu.scut.qinglew.rpc.handler.RequestHandler;
+import cn.edu.scut.qinglew.rpc.hook.ShutdownHook;
 import cn.edu.scut.qinglew.rpc.provider.ServiceProvider;
 import cn.edu.scut.qinglew.rpc.provider.ServiceProviderImpl;
 import cn.edu.scut.qinglew.rpc.registry.NacosServiceRegistry;
@@ -49,6 +50,7 @@ public class SocketServer implements RpcServer {
     public void start() {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
             logger.info("服务器启动...");
+            ShutdownHook.getShutdownHook().addClearAllHook();
             Socket socket;
             while ((socket = serverSocket.accept()) != null) {
                 logger.info("消费者连接: {}:{}", socket.getInetAddress(), socket.getPort());

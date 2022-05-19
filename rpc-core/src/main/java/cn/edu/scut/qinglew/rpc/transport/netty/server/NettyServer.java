@@ -1,5 +1,6 @@
 package cn.edu.scut.qinglew.rpc.transport.netty.server;
 
+import cn.edu.scut.qinglew.rpc.hook.ShutdownHook;
 import cn.edu.scut.qinglew.rpc.provider.ServiceProvider;
 import cn.edu.scut.qinglew.rpc.provider.ServiceProviderImpl;
 import cn.edu.scut.qinglew.rpc.transport.RpcServer;
@@ -65,6 +66,7 @@ public class NettyServer implements RpcServer {
                             pipeline.addLast(new NettyServerHandler());
                         }
                     });
+            ShutdownHook.getShutdownHook().addClearAllHook();
             ChannelFuture future = serverBootstrap.bind(host, port).sync();
             future.channel().closeFuture().sync();
         } catch (InterruptedException e) {

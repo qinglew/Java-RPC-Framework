@@ -2,6 +2,7 @@ package cn.edu.scut.qinglew.rpc.registry;
 
 import cn.edu.scut.qinglew.rpc.enumeration.RpcError;
 import cn.edu.scut.qinglew.rpc.exception.RpcException;
+import cn.edu.scut.qinglew.rpc.util.NacosUtils;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
@@ -16,24 +17,12 @@ public class NacosServiceRegistry implements ServiceRegistry {
 
     private static final Logger logger = LoggerFactory.getLogger(NacosServiceRegistry.class);
 
-    private static final String SERVER_ADDRESS = "127.0.0.1:8848";
-    private static final NamingService namingService;
-
-    static {
-        try {
-            namingService = NamingFactory.createNamingService(SERVER_ADDRESS);
-        } catch (NacosException e) {
-            logger.error("连接到Nacos时有错误发生: ", e);
-            throw new RpcException(RpcError.FAILED_TO_CONNECT_TO_SERVICE_REGISTRY);
-        }
-    }
-
     @Override
     public void register(String serviceName, InetSocketAddress inetSocketAddress) {
         try {
-            namingService.registerInstance(serviceName, inetSocketAddress.getHostName(), inetSocketAddress.getPort());
+            NacosUtils.registerService(serviceName, inetSocketAddress);
         } catch (NacosException e) {
-            logger.error("注册服务时有错误发生: ", e);
+            logger.error("注册服务时有错误发生:", e);
             throw new RpcException(RpcError.REGISTER_SERVICE_FAILED);
         }
     }
@@ -41,7 +30,7 @@ public class NacosServiceRegistry implements ServiceRegistry {
     @Override
     public InetSocketAddress lookupService(String serviceName) {
         try {
-            List<Instance> instances = namingService.getAllInstances(serviceName);
+            List<Instance> instances = NacosUtils.getAllInstances(serviceName);
             // 这里没有做负载均衡，而是直接取第一个注册进来的服务器
             Instance instance = instances.get(0);
             return new InetSocketAddress(instance.getIp(), instance.getPort());
