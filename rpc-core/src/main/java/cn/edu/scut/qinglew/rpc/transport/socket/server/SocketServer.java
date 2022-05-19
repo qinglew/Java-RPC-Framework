@@ -42,7 +42,7 @@ public class SocketServer implements RpcServer {
         this.host = host;
         this.port = port;
         threadPool = ThreadPoolFactory.createDefaultThreadPool("socket-rpc-server");
-        this.serviceRegistry = new NacosServiceRegistry();
+        this.serviceRegistry = new NacosServiceRegistry(null);
         this.serviceProvider = new ServiceProviderImpl();
     }
 

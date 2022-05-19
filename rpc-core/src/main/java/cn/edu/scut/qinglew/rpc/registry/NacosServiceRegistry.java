@@ -2,6 +2,7 @@ package cn.edu.scut.qinglew.rpc.registry;
 
 import cn.edu.scut.qinglew.rpc.enumeration.RpcError;
 import cn.edu.scut.qinglew.rpc.exception.RpcException;
+import cn.edu.scut.qinglew.rpc.loadbalancer.LoadBalancer;
 import cn.edu.scut.qinglew.rpc.util.NacosUtils;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingFactory;
@@ -17,6 +18,12 @@ public class NacosServiceRegistry implements ServiceRegistry {
 
     private static final Logger logger = LoggerFactory.getLogger(NacosServiceRegistry.class);
 
+    private final LoadBalancer loadBalancer;
+
+    public NacosServiceRegistry(LoadBalancer loadBalancer) {
+        this.loadBalancer = loadBalancer;
+    }
+
     @Override
     public void register(String serviceName, InetSocketAddress inetSocketAddress) {
         try {
@@ -31,8 +38,8 @@ public class NacosServiceRegistry implements ServiceRegistry {
     public InetSocketAddress lookupService(String serviceName) {
         try {
             List<Instance> instances = NacosUtils.getAllInstances(serviceName);
-            // 这里没有做负载均衡，而是直接取第一个注册进来的服务器
-            Instance instance = instances.get(0);
+            // 负载均衡
+            Instance instance = loadBalancer.select(instances);
             return new InetSocketAddress(instance.getIp(), instance.getPort());
         } catch (NacosException e) {
             logger.error("获取服务时有错误发生: ", e);

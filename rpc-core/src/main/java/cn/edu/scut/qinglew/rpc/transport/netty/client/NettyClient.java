@@ -1,5 +1,6 @@
 package cn.edu.scut.qinglew.rpc.transport.netty.client;
 
+import cn.edu.scut.qinglew.rpc.loadbalancer.RandomLoadBalancer;
 import cn.edu.scut.qinglew.rpc.transport.RpcClient;
 import cn.edu.scut.qinglew.rpc.entity.RpcRequest;
 import cn.edu.scut.qinglew.rpc.entity.RpcResponse;
@@ -43,7 +44,7 @@ public class NettyClient implements RpcClient {
     }
 
     public NettyClient() {
-        this.serviceRegistry = new NacosServiceRegistry();
+        this.serviceRegistry = new NacosServiceRegistry(new RandomLoadBalancer());
     }
 
     @Override

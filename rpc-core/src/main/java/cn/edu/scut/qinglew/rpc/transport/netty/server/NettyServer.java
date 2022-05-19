@@ -1,6 +1,8 @@
 package cn.edu.scut.qinglew.rpc.transport.netty.server;
 
 import cn.edu.scut.qinglew.rpc.hook.ShutdownHook;
+import cn.edu.scut.qinglew.rpc.loadbalancer.RandomLoadBalancer;
+import cn.edu.scut.qinglew.rpc.loadbalancer.RoundRobinLoadBalancer;
 import cn.edu.scut.qinglew.rpc.provider.ServiceProvider;
 import cn.edu.scut.qinglew.rpc.provider.ServiceProviderImpl;
 import cn.edu.scut.qinglew.rpc.transport.RpcServer;
@@ -40,7 +42,7 @@ public class NettyServer implements RpcServer {
     public NettyServer(String host, int port) {
         this.host = host;
         this.port = port;
-        serviceRegistry = new NacosServiceRegistry();
+        serviceRegistry = new NacosServiceRegistry(null);
         serviceProvider = new ServiceProviderImpl();
     }
 

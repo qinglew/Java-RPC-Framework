@@ -4,6 +4,7 @@ import cn.edu.scut.qinglew.rpc.entity.RpcResponse;
 import cn.edu.scut.qinglew.rpc.enumeration.ResponseCode;
 import cn.edu.scut.qinglew.rpc.enumeration.RpcError;
 import cn.edu.scut.qinglew.rpc.exception.RpcException;
+import cn.edu.scut.qinglew.rpc.loadbalancer.RandomLoadBalancer;
 import cn.edu.scut.qinglew.rpc.registry.NacosServiceRegistry;
 import cn.edu.scut.qinglew.rpc.registry.ServiceRegistry;
 import cn.edu.scut.qinglew.rpc.serializer.CommonSerializer;
@@ -31,7 +32,7 @@ public class SocketClient implements RpcClient {
 
     public SocketClient() {
         // 连接Nacos服务器
-        this.serviceRegistry = new NacosServiceRegistry();
+        this.serviceRegistry = new NacosServiceRegistry(new RandomLoadBalancer());
     }
 
     @Override
