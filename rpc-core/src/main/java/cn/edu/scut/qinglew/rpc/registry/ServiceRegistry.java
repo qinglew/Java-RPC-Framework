@@ -1,20 +1,22 @@
 package cn.edu.scut.qinglew.rpc.registry;
 
+import java.net.InetSocketAddress;
+
 /**
  * 服务注册表
  */
 public interface ServiceRegistry {
     /**
-     * 注册服务
-     * @param service
-     * @param <T>
+     * 将一个服务注册进注册表
+     * @param serviceName 服务名称
+     * @param inetSocketAddress 提供服务的地址
      */
-    <T> void registry(T service);
+    void register(String serviceName, InetSocketAddress inetSocketAddress);
 
     /**
-     * 获取服务
-     * @param serviceName
-     * @return
+     * 根据服务名称查找服务实体
+     * @param serviceName 服务名称
+     * @return 服务实体
      */
-    Object getService(String serviceName);
+    InetSocketAddress lookupService(String serviceName);
 }

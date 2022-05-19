@@ -1,8 +1,9 @@
-package cn.edu.scut.qinglew.rpc.netty.server;
+package cn.edu.scut.qinglew.rpc.transport.netty.server;
 
-import cn.edu.scut.qinglew.rpc.RequestHandler;
+import cn.edu.scut.qinglew.rpc.factory.ThreadPoolFactory;
+import cn.edu.scut.qinglew.rpc.handler.RequestHandler;
 import cn.edu.scut.qinglew.rpc.entity.RpcRequest;
-import cn.edu.scut.qinglew.rpc.registry.DefaultServiceRegistry;
+import cn.edu.scut.qinglew.rpc.provider.ServiceProviderImpl;
 import cn.edu.scut.qinglew.rpc.registry.ServiceRegistry;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -12,33 +13,35 @@ import io.netty.util.ReferenceCountUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.ExecutorService;
+
 public class NettyServerHandler extends SimpleChannelInboundHandler<RpcRequest> {
 
     private static final Logger logger = LoggerFactory.getLogger(NettyServerHandler.class);
 
-    private static RequestHandler requestHandler;
-    private static ServiceRegistry serviceRegistry;
+    private static final RequestHandler requestHandler;
+    private static final String THREAD_NAME_PREFIX = "netty-server-handler";
+    private static final ExecutorService threadPool;
 
     static {
         requestHandler = new RequestHandler();
-        serviceRegistry = new DefaultServiceRegistry();
+        threadPool = ThreadPoolFactory.createDefaultThreadPool(THREAD_NAME_PREFIX);
     }
 
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, RpcRequest rpcRequest) throws Exception {
-        try {
-            logger.info("服务器接受到请求: {}", rpcRequest);
+        threadPool.execute(() -> {
+            try {
+                logger.info("服务器接受到请求: {}", rpcRequest);
 
-            String interfaceName = rpcRequest.getInterfaceName();
-            Object service = serviceRegistry.getService(interfaceName);
+                Object response = requestHandler.handle(rpcRequest);
 
-            Object response = requestHandler.handle(rpcRequest, service);
-
-            ChannelFuture future = channelHandlerContext.writeAndFlush(response);
-            future.addListener(ChannelFutureListener.CLOSE);
-        } finally {
-            ReferenceCountUtil.release(rpcRequest);
-        }
+                ChannelFuture future = channelHandlerContext.writeAndFlush(response);
+                future.addListener(ChannelFutureListener.CLOSE);
+            } finally {
+                ReferenceCountUtil.release(rpcRequest);
+            }
+        });
     }
 
     @Override

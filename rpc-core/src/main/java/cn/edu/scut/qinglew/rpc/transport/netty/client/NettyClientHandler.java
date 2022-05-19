@@ -1,4 +1,4 @@
-package cn.edu.scut.qinglew.rpc.netty.client;
+package cn.edu.scut.qinglew.rpc.transport.netty.client;
 
 import cn.edu.scut.qinglew.rpc.entity.RpcResponse;
 import io.netty.channel.ChannelHandlerContext;

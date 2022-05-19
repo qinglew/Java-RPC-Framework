@@ -1,7 +1,8 @@
-package cn.edu.scut.qinglew.rpc.registry;
+package cn.edu.scut.qinglew.rpc.provider;
 
 import cn.edu.scut.qinglew.rpc.enumeration.RpcError;
 import cn.edu.scut.qinglew.rpc.exception.RpcException;
+import cn.edu.scut.qinglew.rpc.registry.ServiceRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,9 +13,9 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * 服务注册表默认实现
  */
-public class DefaultServiceRegistry implements ServiceRegistry{
+public class ServiceProviderImpl implements ServiceProvider {
 
-    private static final Logger logger = LoggerFactory.getLogger(DefaultServiceRegistry.class);
+    private static final Logger logger = LoggerFactory.getLogger(ServiceProviderImpl.class);
 
     /**
      * 存储接口名-服务映射
@@ -27,7 +28,7 @@ public class DefaultServiceRegistry implements ServiceRegistry{
     private static final Set<String> registeredService = ConcurrentHashMap.newKeySet();
 
     @Override
-    public synchronized <T> void registry(T service) {
+    public <T> void addServiceProvider(T service) {
         String serviceName = service.getClass().getCanonicalName();
 
         if (registeredService.contains(serviceName))
@@ -47,7 +48,7 @@ public class DefaultServiceRegistry implements ServiceRegistry{
     }
 
     @Override
-    public synchronized Object getService(String serviceName) {
+    public Object getServiceProvider(String serviceName) {
         Object service = serviceMap.get(serviceName);
         if (service == null) {
             throw new RpcException(RpcError.SERVICE_NOT_FOUND);
