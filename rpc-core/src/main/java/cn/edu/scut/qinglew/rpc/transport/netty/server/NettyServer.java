@@ -1,19 +1,12 @@
 package cn.edu.scut.qinglew.rpc.transport.netty.server;
 
 import cn.edu.scut.qinglew.rpc.hook.ShutdownHook;
-import cn.edu.scut.qinglew.rpc.loadbalancer.RandomLoadBalancer;
-import cn.edu.scut.qinglew.rpc.loadbalancer.RoundRobinLoadBalancer;
-import cn.edu.scut.qinglew.rpc.provider.ServiceProvider;
 import cn.edu.scut.qinglew.rpc.provider.ServiceProviderImpl;
-import cn.edu.scut.qinglew.rpc.transport.RpcServer;
+import cn.edu.scut.qinglew.rpc.transport.AbstractRpcServer;
 import cn.edu.scut.qinglew.rpc.codec.CommonDecoder;
 import cn.edu.scut.qinglew.rpc.codec.CommonEncoder;
-import cn.edu.scut.qinglew.rpc.enumeration.RpcError;
-import cn.edu.scut.qinglew.rpc.exception.RpcException;
 import cn.edu.scut.qinglew.rpc.registry.NacosServiceRegistry;
-import cn.edu.scut.qinglew.rpc.registry.ServiceRegistry;
 import cn.edu.scut.qinglew.rpc.serializer.CommonSerializer;
-import cn.edu.scut.qinglew.rpc.serializer.HessianSerializer;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -21,33 +14,31 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.netty.handler.timeout.IdleStateHandler;
 
-import java.net.InetSocketAddress;
+import java.util.concurrent.TimeUnit;
 
-public class NettyServer implements RpcServer {
-
-    private static final Logger logger = LoggerFactory.getLogger(NettyServer.class);
-
-    private final String host;
-    private final int port;
-
-    private final ServiceRegistry serviceRegistry;
-    private final ServiceProvider serviceProvider;
-
-
-    private CommonSerializer serializer;
+public class NettyServer extends AbstractRpcServer {
 
     public NettyServer(String host, int port) {
+        this(host, port, DEFAULT_SERIALIZER);
+    }
+
+    public NettyServer(String host, int port, Integer serializer) {
         this.host = host;
         this.port = port;
-        serviceRegistry = new NacosServiceRegistry(null);
-        serviceProvider = new ServiceProviderImpl();
+        this.serializer = CommonSerializer.getByCode(serializer);
+
+        this.serviceRegistry = new NacosServiceRegistry();
+        this.serviceProvider = new ServiceProviderImpl();
+
+        scanServices();
     }
 
     @Override
     public void start() {
+        ShutdownHook.getShutdownHook().addClearAllHook();
+
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
 
@@ -63,12 +54,12 @@ public class NettyServer implements RpcServer {
                         @Override
                         protected void initChannel(SocketChannel socketChannel) {
                             ChannelPipeline pipeline = socketChannel.pipeline();
-                            pipeline.addLast(new CommonEncoder(serializer));
-                            pipeline.addLast(new CommonDecoder());
-                            pipeline.addLast(new NettyServerHandler());
+                            pipeline.addLast(new IdleStateHandler(30, 0, 0, TimeUnit.SECONDS))
+                                    .addLast(new CommonEncoder(serializer))
+                                    .addLast(new CommonDecoder())
+                                    .addLast(new NettyServerHandler());
                         }
                     });
-            ShutdownHook.getShutdownHook().addClearAllHook();
             ChannelFuture future = serverBootstrap.bind(host, port).sync();
             future.channel().closeFuture().sync();
         } catch (InterruptedException e) {
@@ -77,21 +68,5 @@ public class NettyServer implements RpcServer {
             bossGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();
         }
-    }
-
-    @Override
-    public void setSerializer(CommonSerializer serializer) {
-        this.serializer = serializer;
-    }
-
-    @Override
-    public <T> void publishService(Object service, Class<T> serviceClass) {
-        if (service == null) {
-            logger.error("未设置序列化器");
-            throw new RpcException(RpcError.SERVICE_NOT_FOUND);
-        }
-        serviceProvider.addServiceProvider(service);
-        serviceRegistry.register(serviceClass.getCanonicalName(), new InetSocketAddress(host, port));
-        start();
     }
 }

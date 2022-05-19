@@ -1,13 +1,13 @@
 package cn.edu.scut.qinglew.rpc.transport.netty.client;
 
-import cn.edu.scut.qinglew.rpc.loadbalancer.RandomLoadBalancer;
+import cn.edu.scut.qinglew.rpc.loadbalancer.LoadBalancer;
+import cn.edu.scut.qinglew.rpc.registry.NacosServiceDiscovery;
+import cn.edu.scut.qinglew.rpc.registry.ServiceDiscovery;
 import cn.edu.scut.qinglew.rpc.transport.RpcClient;
 import cn.edu.scut.qinglew.rpc.entity.RpcRequest;
 import cn.edu.scut.qinglew.rpc.entity.RpcResponse;
 import cn.edu.scut.qinglew.rpc.enumeration.RpcError;
 import cn.edu.scut.qinglew.rpc.exception.RpcException;
-import cn.edu.scut.qinglew.rpc.registry.NacosServiceRegistry;
-import cn.edu.scut.qinglew.rpc.registry.ServiceRegistry;
 import cn.edu.scut.qinglew.rpc.serializer.CommonSerializer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
@@ -26,25 +26,38 @@ import java.util.concurrent.atomic.AtomicReference;
 public class NettyClient implements RpcClient {
     private static final Logger logger = LoggerFactory.getLogger(NettyClient.class);
 
+    private static final EventLoopGroup group;
     private static final Bootstrap bootstrap;
-
-    private final ServiceRegistry serviceRegistry;
-
-    private CommonSerializer serializer;
 
     /*
       配置Netty客户端
      */
     static {
-        EventLoopGroup group = new NioEventLoopGroup();
+        group = new NioEventLoopGroup();
         bootstrap = new Bootstrap();
         bootstrap.group(group)
                 .channel(NioSocketChannel.class)
                 .option(ChannelOption.SO_KEEPALIVE, true);
     }
 
+    private final ServiceDiscovery serviceDiscovery;
+    private final CommonSerializer serializer;
+
     public NettyClient() {
-        this.serviceRegistry = new NacosServiceRegistry(new RandomLoadBalancer());
+        this(DEFAULT_SERIALIZER, null);
+    }
+
+    public NettyClient(LoadBalancer loadBalancer) {
+        this(DEFAULT_SERIALIZER, loadBalancer);
+    }
+
+    public NettyClient(Integer serializer) {
+        this(serializer, null);
+    }
+
+    public NettyClient(Integer serializer, LoadBalancer loadBalancer) {
+        this.serviceDiscovery = new NacosServiceDiscovery(loadBalancer);
+        this.serializer = CommonSerializer.getByCode(serializer);
     }
 
     @Override
@@ -56,7 +69,7 @@ public class NettyClient implements RpcClient {
         // ??? why need CAS ???
         AtomicReference<Object> result = new AtomicReference<>();
         try {
-            InetSocketAddress inetSocketAddress = serviceRegistry.lookupService(rpcRequest.getInterfaceName());
+            InetSocketAddress inetSocketAddress = serviceDiscovery.lookupService(rpcRequest.getInterfaceName());
             Channel channel = ChannelProvider.get(inetSocketAddress, serializer);
             if (channel.isActive()) {
                 channel.writeAndFlush(rpcRequest).addListener(future1 -> {
@@ -80,10 +93,5 @@ public class NettyClient implements RpcClient {
             logger.error("发送消息时有错误发生: ", e);
         }
         return result.get();
-    }
-
-    @Override
-    public void setSerializer(CommonSerializer serializer) {
-        this.serializer = serializer;
     }
 }

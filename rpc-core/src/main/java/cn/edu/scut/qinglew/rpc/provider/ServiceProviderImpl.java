@@ -28,9 +28,7 @@ public class ServiceProviderImpl implements ServiceProvider {
     private static final Set<String> registeredService = ConcurrentHashMap.newKeySet();
 
     @Override
-    public <T> void addServiceProvider(T service) {
-        String serviceName = service.getClass().getCanonicalName();
-
+    public <T> void addServiceProvider(T service, String serviceName) {
         if (registeredService.contains(serviceName))
             return;
 

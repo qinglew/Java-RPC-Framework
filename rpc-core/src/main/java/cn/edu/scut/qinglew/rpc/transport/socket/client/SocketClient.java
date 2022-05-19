@@ -4,9 +4,9 @@ import cn.edu.scut.qinglew.rpc.entity.RpcResponse;
 import cn.edu.scut.qinglew.rpc.enumeration.ResponseCode;
 import cn.edu.scut.qinglew.rpc.enumeration.RpcError;
 import cn.edu.scut.qinglew.rpc.exception.RpcException;
-import cn.edu.scut.qinglew.rpc.loadbalancer.RandomLoadBalancer;
-import cn.edu.scut.qinglew.rpc.registry.NacosServiceRegistry;
-import cn.edu.scut.qinglew.rpc.registry.ServiceRegistry;
+import cn.edu.scut.qinglew.rpc.loadbalancer.LoadBalancer;
+import cn.edu.scut.qinglew.rpc.registry.NacosServiceDiscovery;
+import cn.edu.scut.qinglew.rpc.registry.ServiceDiscovery;
 import cn.edu.scut.qinglew.rpc.serializer.CommonSerializer;
 import cn.edu.scut.qinglew.rpc.transport.RpcClient;
 import cn.edu.scut.qinglew.rpc.entity.RpcRequest;
@@ -26,13 +26,24 @@ public class SocketClient implements RpcClient {
 
     private static final Logger logger = LoggerFactory.getLogger(SocketClient.class);
 
-    private final ServiceRegistry serviceRegistry;
-
-    private CommonSerializer serializer;
+    private final CommonSerializer serializer;
+    private final ServiceDiscovery serviceDiscovery;
 
     public SocketClient() {
-        // 连接Nacos服务器
-        this.serviceRegistry = new NacosServiceRegistry(new RandomLoadBalancer());
+        this(DEFAULT_SERIALIZER, null);
+    }
+
+    public SocketClient(Integer serializer) {
+        this(serializer, null);
+    }
+
+    public SocketClient(LoadBalancer loadBalancer) {
+        this(DEFAULT_SERIALIZER, loadBalancer);
+    }
+
+    public SocketClient(Integer serializer, LoadBalancer loadBalancer) {
+        this.serializer = CommonSerializer.getByCode(serializer);
+        this.serviceDiscovery = new NacosServiceDiscovery(loadBalancer);
     }
 
     @Override
@@ -43,7 +54,7 @@ public class SocketClient implements RpcClient {
         }
 
         // 从Nacos中获得有该服务的服务器
-        InetSocketAddress inetSocketAddress = serviceRegistry.lookupService(rpcRequest.getInterfaceName());
+        InetSocketAddress inetSocketAddress = serviceDiscovery.lookupService(rpcRequest.getInterfaceName());
         try (Socket socket = new Socket()) {
             socket.connect(inetSocketAddress);
             OutputStream outputStream = socket.getOutputStream();
@@ -66,10 +77,5 @@ public class SocketClient implements RpcClient {
             logger.error("调用时发生错误: ", e);
             return null;
         }
-    }
-
-    @Override
-    public void setSerializer(CommonSerializer serializer) {
-        this.serializer = serializer;
     }
 }

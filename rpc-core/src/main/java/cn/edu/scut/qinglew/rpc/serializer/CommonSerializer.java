@@ -5,23 +5,12 @@ package cn.edu.scut.qinglew.rpc.serializer;
  */
 public interface CommonSerializer {
 
-    /**
-     * 序列化
-     * @param object
-     * @return
-     */
-    byte[] serialize(Object object);
+    Integer KRYO_SERIALIZER = 0;
+    Integer JSON_SERIALIZER = 1;
+    Integer JDK_SERIALIZER = 2;
+    Integer HESSIAN_SERIALIZER = 3;
 
-    /**
-     * 反序列化
-     * @param bytes
-     * @param clazz
-     * @return
-     */
-    Object deserialize(byte[] bytes, Class<?> clazz);
-
-
-    int getCode();
+    Integer DEFAULT_SERIALIZER = HESSIAN_SERIALIZER;
 
     /**
      * 根据code获取(反)序列化器
@@ -42,4 +31,10 @@ public interface CommonSerializer {
                 return null;
         }
     }
+
+    byte[] serialize(Object object);
+
+    Object deserialize(byte[] bytes, Class<?> clazz);
+
+    int getCode();
 }
