@@ -4,7 +4,10 @@ import cn.edu.scut.qinglew.rpc.annotation.Service;
 import cn.edu.scut.qinglew.rpc.annotation.ServiceScan;
 import cn.edu.scut.qinglew.rpc.enumeration.RpcError;
 import cn.edu.scut.qinglew.rpc.exception.RpcException;
+import cn.edu.scut.qinglew.rpc.handler.RequestHandler;
 import cn.edu.scut.qinglew.rpc.provider.ServiceProvider;
+import cn.edu.scut.qinglew.rpc.provider.ServiceProviderImpl;
+import cn.edu.scut.qinglew.rpc.registry.NacosServiceRegistry;
 import cn.edu.scut.qinglew.rpc.registry.ServiceRegistry;
 import cn.edu.scut.qinglew.rpc.serializer.CommonSerializer;
 import cn.edu.scut.qinglew.rpc.util.ReflectUtil;
@@ -22,6 +25,21 @@ public abstract class AbstractRpcServer implements RpcServer {
     protected CommonSerializer serializer;
     protected ServiceRegistry serviceRegistry;
     protected ServiceProvider serviceProvider;
+    protected RequestHandler requestHandler;
+
+    public AbstractRpcServer(String host, int port) {
+        this(host, port, DEFAULT_SERIALIZER);
+    }
+
+    public AbstractRpcServer(String host, int port, Integer serializer) {
+        this.host = host;
+        this.port = port;
+        this.serializer = CommonSerializer.getByCode(serializer);
+        this.serviceRegistry = new NacosServiceRegistry();
+        this.serviceProvider = new ServiceProviderImpl();
+        this.requestHandler = new RequestHandler(this.serviceProvider);
+        scanServices();
+    }
 
     /**
      * 自动扫描服务（扫描所有@Service的类）并创建服务对象，注册

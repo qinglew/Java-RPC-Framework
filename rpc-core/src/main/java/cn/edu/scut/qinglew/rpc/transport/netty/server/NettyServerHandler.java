@@ -3,8 +3,6 @@ package cn.edu.scut.qinglew.rpc.transport.netty.server;
 import cn.edu.scut.qinglew.rpc.factory.ThreadPoolFactory;
 import cn.edu.scut.qinglew.rpc.handler.RequestHandler;
 import cn.edu.scut.qinglew.rpc.entity.RpcRequest;
-import cn.edu.scut.qinglew.rpc.provider.ServiceProviderImpl;
-import cn.edu.scut.qinglew.rpc.registry.ServiceRegistry;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
@@ -19,13 +17,16 @@ public class NettyServerHandler extends SimpleChannelInboundHandler<RpcRequest> 
 
     private static final Logger logger = LoggerFactory.getLogger(NettyServerHandler.class);
 
-    private static final RequestHandler requestHandler;
+    private final RequestHandler requestHandler;
     private static final String THREAD_NAME_PREFIX = "netty-server-handler";
     private static final ExecutorService threadPool;
 
     static {
-        requestHandler = new RequestHandler();
         threadPool = ThreadPoolFactory.createDefaultThreadPool(THREAD_NAME_PREFIX);
+    }
+
+    public NettyServerHandler(RequestHandler requestHandler) {
+        this.requestHandler = requestHandler;
     }
 
     @Override

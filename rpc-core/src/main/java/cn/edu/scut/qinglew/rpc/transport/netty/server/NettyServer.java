@@ -21,18 +21,11 @@ import java.util.concurrent.TimeUnit;
 public class NettyServer extends AbstractRpcServer {
 
     public NettyServer(String host, int port) {
-        this(host, port, DEFAULT_SERIALIZER);
+        super(host, port, DEFAULT_SERIALIZER);
     }
 
     public NettyServer(String host, int port, Integer serializer) {
-        this.host = host;
-        this.port = port;
-        this.serializer = CommonSerializer.getByCode(serializer);
-
-        this.serviceRegistry = new NacosServiceRegistry();
-        this.serviceProvider = new ServiceProviderImpl();
-
-        scanServices();
+        super(host, port, serializer);
     }
 
     @Override
@@ -57,7 +50,7 @@ public class NettyServer extends AbstractRpcServer {
                             pipeline.addLast(new IdleStateHandler(30, 0, 0, TimeUnit.SECONDS))
                                     .addLast(new CommonEncoder(serializer))
                                     .addLast(new CommonDecoder())
-                                    .addLast(new NettyServerHandler());
+                                    .addLast(new NettyServerHandler(requestHandler));
                         }
                     });
             ChannelFuture future = serverBootstrap.bind(host, port).sync();

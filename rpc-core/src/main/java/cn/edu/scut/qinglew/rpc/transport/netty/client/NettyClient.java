@@ -1,5 +1,6 @@
 package cn.edu.scut.qinglew.rpc.transport.netty.client;
 
+import cn.edu.scut.qinglew.rpc.enumeration.ResponseCode;
 import cn.edu.scut.qinglew.rpc.loadbalancer.LoadBalancer;
 import cn.edu.scut.qinglew.rpc.registry.NacosServiceDiscovery;
 import cn.edu.scut.qinglew.rpc.registry.ServiceDiscovery;
@@ -9,10 +10,7 @@ import cn.edu.scut.qinglew.rpc.entity.RpcResponse;
 import cn.edu.scut.qinglew.rpc.enumeration.RpcError;
 import cn.edu.scut.qinglew.rpc.exception.RpcException;
 import cn.edu.scut.qinglew.rpc.serializer.CommonSerializer;
-import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.AttributeKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,20 +23,6 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class NettyClient implements RpcClient {
     private static final Logger logger = LoggerFactory.getLogger(NettyClient.class);
-
-    private static final EventLoopGroup group;
-    private static final Bootstrap bootstrap;
-
-    /*
-      配置Netty客户端
-     */
-    static {
-        group = new NioEventLoopGroup();
-        bootstrap = new Bootstrap();
-        bootstrap.group(group)
-                .channel(NioSocketChannel.class)
-                .option(ChannelOption.SO_KEEPALIVE, true);
-    }
 
     private final ServiceDiscovery serviceDiscovery;
     private final CommonSerializer serializer;
@@ -66,12 +50,18 @@ public class NettyClient implements RpcClient {
             logger.error("未设置序列化器");
             throw new RpcException(RpcError.SERIALIZER_NOT_FOUND);
         }
+
         // ??? why need CAS ???
         AtomicReference<Object> result = new AtomicReference<>();
         try {
             InetSocketAddress inetSocketAddress = serviceDiscovery.lookupService(rpcRequest.getInterfaceName());
+
+            // 客户端连接服务器
             Channel channel = ChannelProvider.get(inetSocketAddress, serializer);
+
+            // 连接成功
             if (channel.isActive()) {
+                // 写入RpcRequest对象
                 channel.writeAndFlush(rpcRequest).addListener(future1 -> {
                     if (future1.isSuccess()) {
                         logger.info(String.format("客户端发送消息: %s", rpcRequest));
@@ -81,8 +71,21 @@ public class NettyClient implements RpcClient {
                 });
                 channel.closeFuture().sync();
 
+                // BIO获取响应对象
                 AttributeKey<RpcResponse> key = AttributeKey.valueOf("rpcResponse");
                 RpcResponse rpcResponse = channel.attr(key).get();
+
+                // 服务器写会的响应对象为空，服务调用失败
+                if (rpcResponse == null) {
+                    logger.error("服务调用失败, service: {}", rpcRequest.getInterfaceName());
+                    throw new RpcException(RpcError.SERVICE_INVOCATION_FAILURE, "service: " + rpcRequest.getInterfaceName());
+                }
+
+                // 服务器写会响应对象，但响应对象状态码不为200，服务调用失败，读取失败信息
+                if (rpcResponse.getStatusCode() != ResponseCode.SUCCESS.getCode()) {
+                    logger.error(rpcResponse.getMessage());
+                    throw new RpcException(RpcError.SERVICE_INVOCATION_FAILURE, "service: " + rpcRequest.getInterfaceName());
+                }
                 // TODO: check response data
                 //
                 result.set(rpcResponse.getData());

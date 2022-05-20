@@ -2,6 +2,7 @@ package cn.edu.scut.qinglew.rpc.entity;
 
 import cn.edu.scut.qinglew.rpc.enumeration.ResponseCode;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 
@@ -11,11 +12,13 @@ import java.io.Serializable;
  * @author Qing Lew
  */
 @Data
-public class RpcResponse<T> implements Serializable {
+@NoArgsConstructor
+public class RpcResponse implements Serializable {
 
-    public RpcResponse() {
-
-    }
+    /**
+     * 响应对应的请求号
+     */
+    private String requestId;
 
     /**
      * 响应状态码
@@ -28,18 +31,20 @@ public class RpcResponse<T> implements Serializable {
     /**
      * 响应数据
      */
-    private T data;
+    private Object data;
 
-    public static <T> RpcResponse<T> success(T data) {
-        RpcResponse<T> response = new RpcResponse<>();
+    public static RpcResponse success(String requestId, Object data) {
+        RpcResponse response = new RpcResponse();
+        response.setRequestId(requestId);
         response.setStatusCode(ResponseCode.SUCCESS.getCode());
         response.setMessage(ResponseCode.SUCCESS.getMessage());
         response.setData(data);
         return response;
     }
 
-    public static <T> RpcResponse<T> fail(ResponseCode code) {
-        RpcResponse<T> response = new RpcResponse<>();
+    public static RpcResponse fail(String requestId, ResponseCode code) {
+        RpcResponse response = new RpcResponse();
+        response.setRequestId(requestId);
         response.setStatusCode(code.getCode());
         response.setMessage(code.getMessage());
         return response;

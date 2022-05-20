@@ -55,23 +55,37 @@ public class SocketClient implements RpcClient {
 
         // 从Nacos中获得有该服务的服务器
         InetSocketAddress inetSocketAddress = serviceDiscovery.lookupService(rpcRequest.getInterfaceName());
+
         try (Socket socket = new Socket()) {
+            // 客户端连接服务器
             socket.connect(inetSocketAddress);
+
+            // 获取输入输出流
             OutputStream outputStream = socket.getOutputStream();
             InputStream inputStream = socket.getInputStream();
+
+            // 将请求对象写入输出流，由于是对象，因此需要将序列化
             ObjectWriter.writeObject(outputStream, rpcRequest, serializer);
+
+            // Socket为BIO，阻塞等待服务器写回响应对象
             Object response =  ObjectReader.readObject(inputStream);
             RpcResponse rpcResponse = (RpcResponse) response;
+
+            // 服务器写会的响应对象为空，服务调用失败
             if (rpcResponse == null) {
                 logger.error("服务调用失败, service: {}", rpcRequest.getInterfaceName());
                 throw new RpcException(RpcError.SERVICE_INVOCATION_FAILURE, "service: " + rpcRequest.getInterfaceName());
             }
+
+            // 服务器写会响应对象，但响应对象状态码不为200，服务调用失败，读取失败信息
             if (rpcResponse.getStatusCode() != ResponseCode.SUCCESS.getCode()) {
                 logger.error(rpcResponse.getMessage());
                 throw new RpcException(RpcError.SERVICE_INVOCATION_FAILURE, "service: " + rpcRequest.getInterfaceName());
             }
+
             // TODO: check response data
             //
+
             return rpcResponse.getData();
         } catch (IOException e) {
             logger.error("调用时发生错误: ", e);

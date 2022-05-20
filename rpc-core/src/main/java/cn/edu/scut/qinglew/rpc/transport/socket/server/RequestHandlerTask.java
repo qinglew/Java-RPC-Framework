@@ -2,7 +2,6 @@ package cn.edu.scut.qinglew.rpc.transport.socket.server;
 
 import cn.edu.scut.qinglew.rpc.handler.RequestHandler;
 import cn.edu.scut.qinglew.rpc.entity.RpcRequest;
-import cn.edu.scut.qinglew.rpc.registry.ServiceRegistry;
 import cn.edu.scut.qinglew.rpc.serializer.CommonSerializer;
 import cn.edu.scut.qinglew.rpc.transport.socket.util.ObjectReader;
 import cn.edu.scut.qinglew.rpc.transport.socket.util.ObjectWriter;

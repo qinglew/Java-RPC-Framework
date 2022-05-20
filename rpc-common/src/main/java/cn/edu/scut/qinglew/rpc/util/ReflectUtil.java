@@ -38,8 +38,7 @@ public class ReflectUtil {
                     // 获取包的物理路径
                     String filePath = URLDecoder.decode(url.getFile(), "UTF-8");
                     // 以文件的方式扫描整个包下的文件 并添加到集合中
-                    findAndAddClassesInPackageByFile(packageName, filePath,
-                            recursive, classes);
+                    findAndAddClassesInPackageByFile(packageName, filePath, recursive, classes);
                 } else if ("jar".equals(protocol)) {
                     // 如果是jar包文件
                     // 定义一个JarFile
@@ -66,8 +65,7 @@ public class ReflectUtil {
                                 // 如果以"/"结尾 是一个包
                                 if (idx != -1) {
                                     // 获取包名 把"/"替换成"."
-                                    packageName = name.substring(0, idx)
-                                            .replace('/', '.');
+                                    packageName = name.substring(0, idx).replace('/', '.');
                                 }
                                 // 如果可以迭代下去 并且是一个包
                                 if ((idx != -1) || recursive) {
@@ -75,14 +73,10 @@ public class ReflectUtil {
                                     if (name.endsWith(".class")
                                             && !entry.isDirectory()) {
                                         // 去掉后面的".class" 获取真正的类名
-                                        String className = name.substring(
-                                                packageName.length() + 1, name
-                                                        .length() - 6);
+                                        String className = name.substring(packageName.length() + 1, name.length() - 6);
                                         try {
                                             // 添加到classes
-                                            classes.add(Class
-                                                    .forName(packageName + '.'
-                                                            + className));
+                                            classes.add(Class.forName(packageName + '.' + className));
                                         } catch (ClassNotFoundException e) {
                                             // log
                                             // .error("添加用户自定义视图类错误 找不到此类的.class文件");

@@ -17,9 +17,23 @@ public class ObjectReader {
 
     private static final int MAGIC_NUMBER = 0xCAFEBABE;
 
+    /**
+     * 协议格式:
+     * +----------------+----------------+-------------------+---------------+
+     * |  Magic Number  |  Package Type  |  Serializer Type  |  Data Length  |
+     * |     4 bytes    |     4 bytes    |      4 bytes      |    4 bytes    |
+     * +----------------+----------------+-------------------+---------------+
+     * |                             Data Bytes                              |
+     * |                         Length: ${Data Length}                      |
+     * +----------------+----------------+-------------------+---------------+
+     * @param in
+     * @return
+     * @throws IOException
+     */
     public static Object readObject(InputStream in) throws IOException {
         byte[] numberBytes = new byte[4];
 
+        // 4 bytes magic number
         in.read(numberBytes);
         int magic = bytesToInt(numberBytes);
         if (magic != MAGIC_NUMBER) {
@@ -27,6 +41,7 @@ public class ObjectReader {
             throw new RpcException(RpcError.UNKNOWN_PROTOCOL);
         }
 
+        // 4 bytes package type: request or response
         in.read(numberBytes);
         int packageCode = bytesToInt(numberBytes);
         Class<?> packageClass;
@@ -39,6 +54,7 @@ public class ObjectReader {
             throw new RpcException(RpcError.UNKNOWN_PACKAGE_TYPE);
         }
 
+        // 4 bytes serializer code
         in.read(numberBytes);
         int serializerCode = bytesToInt(numberBytes);
         CommonSerializer serializer = CommonSerializer.getByCode(serializerCode);
@@ -47,9 +63,11 @@ public class ObjectReader {
             throw new RpcException(RpcError.UNKNOWN_SERIALIZER);
         }
 
+        // 4 bytes data length
         in.read(numberBytes);
         int length = bytesToInt(numberBytes);
 
+        // data
         byte[] bytes = new byte[length];
         in.read(bytes);
 

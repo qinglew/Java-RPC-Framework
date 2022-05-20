@@ -18,32 +18,33 @@ public class RequestHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(RequestHandler.class);
 
-    private static final ServiceProvider serviceProvider;
+    private final ServiceProvider serviceProvider;
 
-    static {
-        serviceProvider = new ServiceProviderImpl();
+    public RequestHandler(ServiceProvider serviceProvider) {
+        this.serviceProvider = serviceProvider;
     }
 
     public Object handle(RpcRequest rpcRequest) {
         Object result = null;
         Object service = serviceProvider.getServiceProvider(rpcRequest.getInterfaceName());
         try {
-            result = RpcResponse.success(invokeTargetMethod(rpcRequest, service));
+            result = RpcResponse.success(rpcRequest.getRequestId(), invokeTargetMethod(rpcRequest, service));
             logger.info("服务: {} 成功调用方法: {}", rpcRequest.getInterfaceName(), rpcRequest.getMethodName());
         } catch (InvocationTargetException e) {
             logger.error("调用或发送时有错误发生: ", e);
-            result = RpcResponse.fail(ResponseCode.FAIL);
+            result = RpcResponse.fail(rpcRequest.getRequestId(), ResponseCode.FAIL);
         } catch (IllegalAccessException e) {
             logger.error("不合法的访问权限: ", e);
-            result = RpcResponse.fail(ResponseCode.ILLEGAL_ACCESS);
+            result = RpcResponse.fail(rpcRequest.getRequestId(), ResponseCode.ILLEGAL_ACCESS);
         } catch (NoSuchMethodException e) {
             logger.error("服务调用失败: ", e);
-            result = RpcResponse.fail(ResponseCode.METHOD_NOT_FOUND);
+            result = RpcResponse.fail(rpcRequest.getRequestId(), ResponseCode.METHOD_NOT_FOUND);
         }
         return result;
     }
 
-    private Object invokeTargetMethod(RpcRequest rpcRequest, Object service) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
+    private Object invokeTargetMethod(RpcRequest rpcRequest, Object service)
+            throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
         /* 通过方法名和方法参数类型反射获得方法对象 */
         Method method;
         method = service.getClass().getMethod(rpcRequest.getMethodName(), rpcRequest.getParamTypes());
